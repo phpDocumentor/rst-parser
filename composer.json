@@ -1,8 +1,8 @@
 {
-    "name": "doctrine/rst-parser",
-    "description": "PHP library to parse reStructuredText documents and generate HTML or LaTeX documents.",
+    "name": "phpdocumentor/guides",
+    "description": "PHP library to parse guides and generate HTML or LaTeX documents.",
     "keywords": ["rst", "markup", "parser", "restructuredtext", "html", "latex"],
-    "homepage": "https://github.com/doctrine/rst-parser",
+    "homepage": "https://github.com/phpDocumentor/rst-parser",
     "license": "MIT",
     "authors": [
         {
@@ -14,10 +14,15 @@
             "name": "Jonathan H. Wage",
             "email": "jonwage@gmail.com",
             "homepage": "https://jwage.com"
+        },
+        {
+            "name": "Mike van Riel",
+            "email": "me@mikevanriel.com",
+            "homepage": "https://mikevanriel.com"
         }
     ],
     "require": {
-        "php": "^7.1",
+        "php": "^7.2",
         "symfony/filesystem": "^4.1|^5.0",
         "twig/twig": "^2.9.0",
         "doctrine/event-manager": "^1.0"
@@ -33,12 +38,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Doctrine\\RST\\": "lib/"
+            "phpDocumentor\\Guides\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Doctrine\\Tests\\RST\\": "tests/"
+            "phpDocumentor\\Guides\\": "tests/"
         }
     }
 }
