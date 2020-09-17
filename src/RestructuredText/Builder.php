@@ -4,223 +4,59 @@ declare(strict_types=1);
 
 namespace phpDocumentor\Guides\RestructuredText;
 
-use phpDocumentor\Guides\RestructuredText\Builder\Copier;
-use phpDocumentor\Guides\RestructuredText\Builder\Documents;
-use phpDocumentor\Guides\RestructuredText\Builder\ParseQueue;
-use phpDocumentor\Guides\RestructuredText\Builder\ParseQueueProcessor;
-use phpDocumentor\Guides\RestructuredText\Builder\Scanner;
-use phpDocumentor\Guides\RestructuredText\Event\PostBuildRenderEvent;
-use phpDocumentor\Guides\RestructuredText\Event\PreBuildParseEvent;
-use phpDocumentor\Guides\RestructuredText\Event\PreBuildRenderEvent;
-use phpDocumentor\Guides\RestructuredText\Event\PreBuildScanEvent;
+use League\Tactician\CommandBus;
+use League\Tactician\Setup\QuickStart;
+use phpDocumentor\Guides\RestructuredText\Command\ParseDirectoryCommand;
+use phpDocumentor\Guides\RestructuredText\Command\ParseDirectoryHandler;
+use phpDocumentor\Guides\RestructuredText\Command\RenderCommand;
+use phpDocumentor\Guides\RestructuredText\Command\RenderHandler;
 use phpDocumentor\Guides\RestructuredText\Meta\CachedMetasLoader;
 use phpDocumentor\Guides\RestructuredText\Meta\Metas;
-use InvalidArgumentException;
-use LogicException;
 use Symfony\Component\Filesystem\Filesystem;
-use function file_exists;
 use function is_dir;
-use function sprintf;
 
 class Builder
 {
-    /** @var Kernel */
-    private $kernel;
-
-    /** @var Configuration */
-    private $configuration;
-
-    /** @var ErrorManager */
-    private $errorManager;
-
     /** @var Filesystem */
     private $filesystem;
 
-    /** @var Metas */
-    private $metas;
-
-    /** @var CachedMetasLoader */
-    private $cachedMetasLoader;
-
-    /** @var Documents */
-    private $documents;
-
-    /** @var ParseQueue|null */
-    private $parseQueue;
-
-    /** @var Copier */
-    private $copier;
-
-    /** @var string */
-    private $indexName = 'index';
+    /** @var CommandBus */
+    private $commandBus;
 
     public function __construct(?Kernel $kernel = null)
     {
-        $this->kernel = $kernel ?? new Kernel();
-
-        $this->configuration = $this->kernel->getConfiguration();
-
-        $this->errorManager = new ErrorManager($this->configuration);
-
+        $kernel = $kernel ?? new Kernel();
+        $metas = new Metas();
+        $cachedMetasLoader = new CachedMetasLoader();
         $this->filesystem = new Filesystem();
 
-        $this->metas = new Metas();
+        $documents = new Builder\Documents($this->filesystem, $metas);
 
-        $this->cachedMetasLoader = new CachedMetasLoader();
-
-        $this->documents = new Builder\Documents(
-            $this->filesystem,
-            $this->metas
+        $this->commandBus = QuickStart::create(
+            [
+                ParseDirectoryCommand::class => new ParseDirectoryHandler(
+                    $kernel,
+                    $cachedMetasLoader,
+                    $metas,
+                    $documents
+                ),
+                RenderCommand::class => new RenderHandler(
+                    $documents,
+                    $this->filesystem,
+                    $metas,
+                    $cachedMetasLoader
+                )
+            ]
         );
-
-        $this->copier = new Builder\Copier($this->filesystem);
-
-        $this->kernel->initBuilder($this);
     }
 
-    public function recreate() : Builder
+    public function build(string $directory, string $targetDirectory = 'output') : void
     {
-        return new Builder($this->kernel);
-    }
-
-    public function getKernel() : Kernel
-    {
-        return $this->kernel;
-    }
-
-    public function getConfiguration() : Configuration
-    {
-        return $this->configuration;
-    }
-
-    public function getDocuments() : Documents
-    {
-        return $this->documents;
-    }
-
-    public function getErrorManager() : ErrorManager
-    {
-        return $this->errorManager;
-    }
-
-    public function setIndexName(string $name) : self
-    {
-        $this->indexName = $name;
-
-        return $this;
-    }
-
-    public function getIndexName() : string
-    {
-        return $this->indexName;
-    }
-
-    public function getMetas() : Metas
-    {
-        return $this->metas;
-    }
-
-    public function getParseQueue() : ParseQueue
-    {
-        if ($this->parseQueue === null) {
-            throw new LogicException('The ParseQueue is not set until after the build is complete');
-        }
-
-        return $this->parseQueue;
-    }
-
-    public function build(
-        string $directory,
-        string $targetDirectory = 'output'
-    ) : void {
-        // Creating output directory if doesn't exists
         if (! is_dir($targetDirectory)) {
             $this->filesystem->mkdir($targetDirectory, 0755);
         }
 
-        $indexFilename = sprintf('%s.%s', $this->indexName, $this->configuration->getSourceFileExtension());
-        if (! file_exists($directory . '/' . $indexFilename)) {
-            throw new InvalidArgumentException(sprintf('Could not find index file "%s" in "%s"', $indexFilename, $directory));
-        }
-
-        if ($this->configuration->getUseCachedMetas()) {
-            $this->cachedMetasLoader->loadCachedMetaEntries($targetDirectory, $this->metas);
-        }
-
-        $parseQueue = $this->scan($directory, $targetDirectory);
-
-        $this->parse($directory, $targetDirectory, $parseQueue);
-
-        $this->render($directory, $targetDirectory);
-
-        $this->cachedMetasLoader->cacheMetaEntries($targetDirectory, $this->metas);
-    }
-
-    public function copy(string $source, ?string $destination = null) : self
-    {
-        $this->copier->copy($source, $destination);
-
-        return $this;
-    }
-
-    public function mkdir(string $directory) : self
-    {
-        $this->copier->mkdir($directory);
-
-        return $this;
-    }
-
-    private function scan(string $directory, string $targetDirectory) : ParseQueue
-    {
-        $this->configuration->dispatchEvent(
-            PreBuildScanEvent::PRE_BUILD_SCAN,
-            new PreBuildScanEvent($this, $directory, $targetDirectory)
-        );
-
-        $scanner = new Scanner(
-            $this->configuration->getSourceFileExtension(),
-            $directory,
-            $this->metas
-        );
-
-        return $scanner->scan();
-    }
-
-    private function parse(string $directory, string $targetDirectory, ParseQueue $parseQueue) : void
-    {
-        $this->configuration->dispatchEvent(
-            PreBuildParseEvent::PRE_BUILD_PARSE,
-            new PreBuildParseEvent($this, $directory, $targetDirectory, $parseQueue)
-        );
-
-        $parseQueueProcessor = new ParseQueueProcessor(
-            $this->kernel,
-            $this->errorManager,
-            $this->metas,
-            $this->documents,
-            $directory,
-            $targetDirectory,
-            $this->configuration->getFileExtension()
-        );
-
-        $parseQueueProcessor->process($parseQueue);
-    }
-
-    private function render(string $directory, string $targetDirectory) : void
-    {
-        $this->configuration->dispatchEvent(
-            PreBuildRenderEvent::PRE_BUILD_RENDER,
-            new PreBuildRenderEvent($this, $directory, $targetDirectory)
-        );
-
-        $this->documents->render($targetDirectory);
-
-        $this->copier->doMkdir($targetDirectory);
-        $this->copier->doCopy($directory, $targetDirectory);
-
-        $this->configuration->dispatchEvent(
-            PostBuildRenderEvent::POST_BUILD_RENDER,
-            new PostBuildRenderEvent($this, $directory, $targetDirectory)
-        );
+        $this->commandBus->handle(new ParseDirectoryCommand($directory, $targetDirectory));
+        $this->commandBus->handle(new RenderCommand($directory, $targetDirectory));
     }
 }

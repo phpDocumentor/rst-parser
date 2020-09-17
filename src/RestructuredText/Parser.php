@@ -15,7 +15,7 @@ use function file_exists;
 use function file_get_contents;
 use function sprintf;
 
-class Parser
+class Parser implements \phpDocumentor\Guides\Parser
 {
     /** @var Configuration */
     private $configuration;

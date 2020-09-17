@@ -71,10 +71,6 @@ class Kernel
     {
     }
 
-    public function initBuilder(Builder $builder) : void
-    {
-    }
-
     /**
      * @return Doc[]
      */

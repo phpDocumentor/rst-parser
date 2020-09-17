@@ -25,7 +25,8 @@
         "php": "^7.2",
         "symfony/filesystem": "^4.1|^5.0",
         "twig/twig": "^2.9.0",
-        "doctrine/event-manager": "^1.0"
+        "doctrine/event-manager": "^1.0",
+        "league/tactician": "^1.0"
     },
     "require-dev": {
         "doctrine/coding-standard": "^6.0",
@@ -43,7 +44,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "phpDocumentor\\Guides\\": "tests/"
+            "phpDocumentor\\Guides\\": "tests/unit/"
         }
     }
 }

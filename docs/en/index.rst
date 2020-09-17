@@ -1,17 +1,23 @@
 Introduction
 ============
 
-The Doctrine RST Parser is a PHP library that can parse `reStructuredText <https://en.wikipedia.org/wiki/ReStructuredText>`_
+The phpDocumentor Guides library is a PHP library that can parse `reStructuredText <https://en.wikipedia.org/wiki/ReStructuredText>`_
 documents and render them in HTML or LaTeX.
+
+Attribution
+-----------
+
+This library is a modified version of Doctrine's RST Parser, which in turn is a modified version
+of Gregwar's RST parser.
 
 Installation
 ------------
 
-You can install the Doctrine RST Parser with composer:
+You can install this library with composer:
 
 .. code-block:: console
 
-    $ composer install doctrine/rst-parser
+    $ composer install phpdocumentor/guides
 
 Basic Usage
 -----------

@@ -23,9 +23,9 @@ class BuilderTest extends BaseBuilderTest
             new Configuration(),
             [new TipDirective()]
         );
+        $kernel->getConfiguration()->setUseCachedMetas(false);
 
         $this->builder = new Builder($kernel);
-        $this->builder->getConfiguration()->setUseCachedMetas(false);
 
         $this->builder->build($this->sourceFile(), $this->targetFile());
     }

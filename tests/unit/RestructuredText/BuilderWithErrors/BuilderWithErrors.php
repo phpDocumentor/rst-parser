@@ -6,12 +6,13 @@ namespace phpDocumentor\Guides\RestructuredText\BuilderWithErrors;
 
 use phpDocumentor\Guides\RestructuredText\Builder;
 use phpDocumentor\Guides\RestructuredText\BaseBuilderTest;
+use phpDocumentor\Guides\RestructuredText\Configuration;
 
 class BuilderWithErrors extends BaseBuilderTest
 {
-    protected function configureBuilder(Builder $builder) : void
+    protected function configureBuilder(Configuration $configuration) : void
     {
-        $builder->getConfiguration()->abortOnError(false);
+        $configuration->abortOnError(false);
     }
 
     public function testMalformedTable() : void

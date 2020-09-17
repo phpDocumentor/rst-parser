@@ -14,8 +14,8 @@ class BuilderTest extends TestCase
     public function testRefInsideDirective() : void
     {
         $kernel  = new Kernel(null, [new VersionAddedDirective()]);
+        $kernel->getConfiguration()->setUseCachedMetas(false);
         $builder = new Builder($kernel);
-        $builder->getConfiguration()->setUseCachedMetas(false);
 
         $builder->build(
             __DIR__ . '/input',

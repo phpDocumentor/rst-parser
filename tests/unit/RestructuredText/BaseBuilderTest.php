@@ -21,13 +21,14 @@ abstract class BaseBuilderTest extends TestCase
     {
         shell_exec('rm -rf ' . $this->targetFile());
 
-        $this->builder = new Builder();
-        $this->builder->getConfiguration()->setUseCachedMetas(false);
-        $this->configureBuilder($this->builder);
+        $kernel = new Kernel();
+        $kernel->getConfiguration()->setUseCachedMetas(false);
+        $this->builder = new Builder($kernel);
+        $this->configureBuilder($kernel->getConfiguration());
         $this->builder->build($this->sourceFile(), $this->targetFile());
     }
 
-    protected function configureBuilder(Builder $builder) : void
+    protected function configureBuilder(Configuration $configuration) : void
     {
     }
 
